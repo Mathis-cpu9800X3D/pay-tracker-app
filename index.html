@@ -352,6 +352,42 @@ const state = {
   historyFilterPeriod: 'all',
   pendingDelete: null,
 };
+  const STORAGE_KEY = 'payTrackerAppData_v1';
+
+function saveState() {
+  const payload = {
+    theme: state.theme,
+    shifts: state.shifts,
+    goals: state.goals,
+    settings: state.settings,
+    historySort: state.historySort,
+    historyFilterPeriod: state.historyFilterPeriod
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+
+    const saved = JSON.parse(raw);
+
+    if (saved.theme) state.theme = saved.theme;
+    if (Array.isArray(saved.shifts)) state.shifts = saved.shifts;
+    if (Array.isArray(saved.goals)) state.goals = saved.goals;
+    if (saved.settings && typeof saved.settings === 'object') {
+      state.settings = { ...state.settings, ...saved.settings };
+    }
+    if (saved.historySort) state.historySort = saved.historySort;
+    if (saved.historyFilterPeriod) state.historyFilterPeriod = saved.historyFilterPeriod;
+
+    return true;
+  } catch (err) {
+    console.error('Failed to load saved data:', err);
+    return false;
+  }
+}
 
 const PALETTE = {
   light: { base:'#5856D6', cash:'#FF9F0A', card:'#5AC8FA', bonus:'#BF5AF2' },
@@ -1039,6 +1075,7 @@ function saveShiftFromForm(){
     state.shifts.push(Object.assign({ id: uid(), isDemo:false, createdAt: Date.now() }, data));
     showToast('Shift saved');
   }
+  saveState();
   state.currentView = 'history';
   renderApp();
 }
@@ -1060,6 +1097,7 @@ function saveGoalFromForm(){
     showToast('Goal added');
   }
   state.showGoalForm = false; state.editingGoalId = null;
+  saveState();
   renderApp();
 }
 function saveSettingsFromForm(){
@@ -1069,6 +1107,7 @@ function saveSettingsFromForm(){
   state.settings.periodStartTime = val('settingsStartTimeInput') || '00:00';
   state.settings.periodEndTime = val('settingsEndTimeInput') || '23:59';
   state.settings.defaultWage = parseFloat(val('settingsDefaultWageInput')) || 0;
+  saveState();
   showToast('Settings saved');
   renderApp();
 }
@@ -1091,6 +1130,7 @@ function confirmDelete(){
     showToast('All data reset');
   }
   state.pendingDelete = null;
+  saveState();
   renderApp();
 }
 function applyTheme(){
@@ -1197,8 +1237,12 @@ function loadDemoData(){
 --------------------------------------------------------- */
 function init(){
   applyTheme();
+  const hasSavedData = loadState ();
+  if (!hasSavedData) {
   loadDemoData();
-  renderApp();
+  saveState();
+  }
+  renderApp(); 
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
     if(state.theme === 'auto'){ applyTheme(); renderApp(); }
   });
