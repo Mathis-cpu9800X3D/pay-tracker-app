@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Shift &amp; Tips — Pay Tracker</title>
+<style>
+  :root{
+    --bg: #F2F2F7;
+    --bg-elevated: #FFFFFF;
+    --bg-secondary: #EFEFF2;
+    --label-primary: #1C1C1E;
+    --label-secondary: #6E6E73;
+    --label-tertiary: #AEAEB2;
+    --separator: rgba(60,60,67,0.13);
+    --accent: #12805C;
+    --accent-2: #0A6B4C;
+    --c-base: #5856D6;
+    --c-cash: #FF9F0A;
+    --c-card: #5AC8FA;
+    --c-bonus: #BF5AF2;
+    --danger: #FF3B30;
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --radius-sm: 12px;
+  }
+  [data-theme="dark"]{
+    --bg: #000000;
+    --bg-elevated: #1C1C1E;
+    --bg-secondary: #2C2C2E;
+    --label-primary: #FFFFFF;
+    --label-secondary: #98989D;
+    --label-tertiary: #6E6E73;
+    --separator: rgba(84,84,88,0.55);
+    --accent: #34C795;
+    --accent-2: #29A67D;
+    --c-base: #7D7AFF;
+    --c-cash: #FFB340;
+    --c-card: #64D2FF;
+    --c-bonus: #DA8FFF;
+    --danger: #FF453A;
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.45);
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--label-primary);
+    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    font-variant-numeric:tabular-nums;
+  }
+  button{ font-family:inherit; cursor:pointer; }
+  input,select,textarea{ font-family:inherit; }
+  :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  @media (prefers-reduced-motion:reduce){
+    *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
+  }
+
+  #app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--bg);
+    position:relative;
+  }
+  @media (min-width:560px){
+    body{ background:#DEDEE3; padding:24px 0; }
+    [data-theme="dark"] body{ background:#000000; }
+    #app{ box-shadow:0 20px 60px rgba(0,0,0,0.22); min-height:calc(100vh - 48px); }
+  }
+
+  #app-content{
+    padding: calc(env(safe-area-inset-top,0px) + 22px) 18px calc(104px + env(safe-area-inset-bottom,0px));
+  }
+
+  /* Header */
+  .page-header{ margin-bottom:20px; }
+  .page-title{ font-size:32px; font-weight:700; letter-spacing:-0.02em; margin:0 0 3px; }
+  .page-subtitle{ font-size:15px; color:var(--label-secondary); font-weight:500; }
+
+  /* Generic cards */
+  .card{ background:var(--bg-elevated); border-radius:var(--radius-lg); padding:20px; margin-bottom:16px; box-shadow:var(--shadow-card); }
+
+  /* Wallet hero card */
+  .wallet-card{
+    background:linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius:var(--radius-lg);
+    padding:22px 22px 20px;
+    margin-bottom:16px;
+    color:#ffffff;
+    box-shadow:0 12px 30px rgba(18,128,92,0.28);
+    position:relative;
+    overflow:hidden;
+  }
+  .wallet-card::after{
+    content:'';
+    position:absolute; top:-60%; right:-25%; width:150%; height:220%;
+    background:radial-gradient(circle, rgba(255,255,255,0.16), transparent 60%);
+    pointer-events:none;
+  }
+  .wallet-top{ display:flex; flex-direction:column; gap:4px; margin-bottom:16px; position:relative; z-index:1; }
+  .wallet-label{ font-size:11px; font-weight:700; letter-spacing:0.08em; opacity:0.85; }
+  .wallet-range{ font-size:14px; font-weight:600; opacity:0.95; }
+  .wallet-amount{ font-size:40px; font-weight:700; letter-spacing:-0.02em; margin-bottom:16px; position:relative; z-index:1; }
+  .wallet-stats-row{ display:flex; gap:22px; position:relative; z-index:1; }
+  .wallet-stats-row > div{ display:flex; flex-direction:column; }
+  .wallet-stat-num{ font-size:16px; font-weight:700; }
+  .wallet-stat-label{ font-size:12px; opacity:0.85; }
+
+  /* Composition ring card */
+  .card-title-row{ margin-bottom:6px; }
+  .card-title-row h3{ margin:0; font-size:17px; font-weight:700; }
+  .ring-wrap{ position:relative; width:158px; height:158px; margin:10px auto 18px; }
+  .ring-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .ring-center-value{ font-size:18px; font-weight:700; }
+  .ring-center-label{ font-size:12px; color:var(--label-secondary); }
+  .legend{ display:flex; flex-direction:column; gap:9px; }
+  .legend-row{ display:flex; align-items:center; font-size:14px; }
+  .legend-dot{ width:9px; height:9px; border-radius:50%; margin-right:9px; flex-shrink:0; }
+  .legend-label{ flex:1; color:var(--label-secondary); }
+  .legend-val{ font-weight:600; }
+  .empty-mini{ text-align:center; color:var(--label-tertiary); font-size:14px; padding:18px 0 4px; }
+
+  /* Stat grid */
+  .stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .stat-tile{ background:var(--bg-elevated); border-radius:var(--radius-md); padding:16px; box-shadow:var(--shadow-card); }
+  .stat-tile-label{ font-size:12.5px; color:var(--label-secondary); margin-bottom:6px; font-weight:500; }
+  .stat-tile-value{ font-size:19px; font-weight:700; }
+
+  /* Trend card */
+  .trend-card{ display:flex; align-items:center; gap:14px; }
+  .trend-icon{ width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .trend-icon.up{ background:rgba(52,199,89,0.15); color:#34C759; }
+  .trend-icon.down{ background:rgba(255,69,58,0.15); color:var(--danger); }
+  .trend-icon.flat{ background:rgba(142,142,147,0.15); color:var(--label-secondary); }
+  .trend-title{ font-weight:700; font-size:15px; margin-bottom:2px; }
+  .trend-sub{ font-size:13px; color:var(--label-secondary); }
+
+  /* Section labels/rows */
+  .section-row{ display:flex; align-items:center; justify-content:space-between; margin:4px 0 10px; }
+  .section-row h3{ margin:0; font-size:19px; font-weight:700; }
+  .section-label{ font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--label-secondary); margin:18px 2px 8px; }
+  .link-btn{ background:none; border:none; color:var(--accent); font-size:15px; font-weight:600; padding:4px; }
+
+  /* Shift cards */
+  .shift-card{ background:var(--bg-elevated); border-radius:var(--radius-md); padding:16px; margin-bottom:10px; box-shadow:var(--shadow-card); position:relative; transition:transform .12s ease; }
+  .shift-card:active{ transform:scale(0.98); }
+  .shift-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .shift-date{ font-weight:700; font-size:15px; }
+  .shift-time{ font-size:13px; color:var(--label-secondary); margin-top:2px; }
+  .shift-total{ font-weight:700; font-size:17px; white-space:nowrap; }
+  .shift-card-badges{ display:flex; gap:6px; margin-top:9px; flex-wrap:wrap; }
+  .badge{ font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; display:inline-flex; align-items:center; gap:4px; }
+  .badge-best{ background:rgba(255,159,10,0.15); color:var(--c-cash); }
+  .badge-above{ background:rgba(18,128,92,0.12); color:var(--accent); }
+  .shift-card-meta{ display:flex; gap:6px; font-size:13px; color:var(--label-secondary); margin-top:9px; flex-wrap:wrap; }
+  .dot{ opacity:0.5; }
+
+  /* Icon buttons */
+  .icon-btn{ background:var(--bg-secondary); border:none; width:34px; height:34px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:var(--label-secondary); flex-shrink:0; }
+  .icon-btn + .icon-btn{ margin-left:6px; }
+
+  /* Buttons */
+  .btn-primary{ background:var(--accent); color:#fff; border:none; padding:15px 20px; border-radius:16px; font-size:16px; font-weight:700; width:100%; transition:transform .12s ease; }
+  .btn-secondary{ background:var(--bg-secondary); color:var(--label-primary); border:none; padding:15px 20px; border-radius:16px; font-size:16px; font-weight:600; width:100%; transition:transform .12s ease; }
+  .btn-danger{ background:var(--danger); color:#fff; border:none; padding:15px 20px; border-radius:16px; font-size:16px; font-weight:700; width:100%; transition:transform .12s ease; }
+  .btn-primary:active,.btn-secondary:active,.btn-danger:active{ transform:scale(0.97); }
+  .btn-primary.full,.btn-secondary.full,.btn-danger.full{ width:100%; }
+  .btn-text{ background:none; border:none; font-size:15px; font-weight:600; padding:12px; color:var(--label-primary); }
+  .btn-text.destructive{ color:var(--danger); }
+  .btn-text.full{ width:100%; text-align:center; margin-top:8px; }
+  .form-actions{ display:flex; gap:10px; margin-top:20px; }
+  .form-actions > button{ flex:1; }
+
+  /* Forms */
+  .form-section-title{ font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--label-secondary); margin:20px 0 10px; }
+  .form-section-title:first-child{ margin-top:0; }
+  .form-field{ margin-bottom:14px; }
+  .form-field label{ display:block; font-size:14px; font-weight:600; margin-bottom:6px; color:var(--label-primary); }
+  .form-field .optional{ font-weight:400; color:var(--label-tertiary); font-size:12px; }
+  .form-field input, .form-field select, .form-field textarea{
+    width:100%; background:var(--bg-secondary); border:1.5px solid transparent; border-radius:12px; padding:13px 14px; font-size:16px; color:var(--label-primary);
+  }
+  .form-field textarea{ resize:none; min-height:84px; }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus{ outline:none; border-color:var(--accent); }
+  .form-field input.input-error{ border-color:var(--danger); }
+  .field-error{ color:var(--danger); font-size:12px; margin-top:5px; min-height:2px; }
+  .hint{ font-size:12px; color:var(--label-tertiary); margin-top:5px; }
+  .form-row-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .period-preview{ font-size:13px; color:var(--accent); font-weight:600; background:rgba(18,128,92,0.08); padding:11px 13px; border-radius:12px; margin:2px 0 4px; }
+
+  .select-wrap{ position:relative; }
+  .select-wrap select{ appearance:none; -webkit-appearance:none; padding-right:34px; }
+  .select-wrap::after{
+    content:''; position:absolute; right:15px; top:50%; width:7px; height:7px;
+    border-right:2px solid var(--label-tertiary); border-bottom:2px solid var(--label-tertiary);
+    transform:translateY(-65%) rotate(45deg); pointer-events:none;
+  }
+
+  .filter-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .filter-row .select-wrap{ flex:1; }
+  .filter-row select{ background:var(--bg-elevated); box-shadow:var(--shadow-card); font-weight:600; font-size:14px; padding:12px 34px 12px 14px; border-radius:14px; }
+
+  /* Insights */
+  .best-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:8px; }
+  .best-card{ padding:14px 8px; text-align:center; }
+  .best-label{ font-size:11px; color:var(--label-secondary); font-weight:600; margin-bottom:6px; }
+  .best-value{ font-size:15px; font-weight:700; }
+  .best-date{ font-size:11px; color:var(--label-tertiary); margin-top:4px; }
+  .best-empty{ color:var(--label-tertiary); font-size:15px; }
+  .month-card{ text-align:center; }
+  .month-amount{ font-size:30px; font-weight:700; }
+  .month-sub{ font-size:13px; color:var(--label-secondary); margin-top:4px; }
+
+  /* Goals */
+  .goal-card{ }
+  .goal-card-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; gap:10px; }
+  .goal-name{ font-size:17px; font-weight:700; }
+  .goal-target{ font-size:13px; color:var(--label-secondary); margin-top:3px; }
+  .goal-actions{ display:flex; flex-shrink:0; }
+  .progress-track{ background:var(--bg-secondary); height:10px; border-radius:6px; overflow:hidden; margin-bottom:10px; }
+  .progress-fill{ background:linear-gradient(90deg, var(--accent), var(--accent-2)); height:100%; border-radius:6px; transition:width 0.6s ease; }
+  .goal-stats-row{ display:flex; justify-content:space-between; font-size:13px; color:var(--label-secondary); margin-bottom:8px; }
+  .goal-need{ font-size:13px; font-weight:600; color:var(--label-primary); }
+  .goal-complete{ font-size:14px; font-weight:700; color:var(--accent); }
+  .form-card h3{ margin:0 0 14px; font-size:18px; font-weight:700; }
+
+  /* Empty states */
+  .empty-state{ text-align:center; padding:54px 20px; }
+  .empty-icon{ color:var(--label-tertiary); margin-bottom:14px; display:flex; justify-content:center; }
+  .empty-title{ font-size:17px; font-weight:700; margin-bottom:6px; }
+  .empty-sub{ font-size:14px; color:var(--label-secondary); margin-bottom:22px; }
+  .empty-state .btn-primary{ display:inline-block; width:auto; padding:13px 26px; }
+
+  /* Settings */
+  .segmented{ display:flex; background:var(--bg-secondary); border-radius:14px; padding:4px; margin-bottom:18px; }
+  .seg-btn{ flex:1; border:none; background:none; padding:10px; border-radius:10px; font-size:14px; font-weight:600; color:var(--label-secondary); }
+  .seg-btn.active{ background:var(--bg-elevated); color:var(--label-primary); box-shadow:0 1px 3px rgba(0,0,0,0.12); }
+  .list-card{ padding:6px; }
+  .list-row{ width:100%; background:none; border:none; display:flex; justify-content:space-between; align-items:center; padding:15px 12px; font-size:16px; color:var(--label-primary); border-bottom:1px solid var(--separator); text-align:left; }
+  .list-row:last-child{ border-bottom:none; }
+  .list-row.destructive{ color:var(--danger); }
+  .storage-note{ font-size:12.5px; color:var(--label-secondary); line-height:1.55; padding:14px 4px 10px; }
+  .storage-note strong{ color:var(--label-primary); }
+
+  /* Tab bar */
+  .tab-bar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:480px;
+    display:flex;
+    background:rgba(255,255,255,0.82);
+    backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-top:1px solid var(--separator);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom,0px));
+    z-index:20;
+  }
+  [data-theme="dark"] .tab-bar{ background:rgba(28,28,30,0.78); }
+  .tab-btn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; padding:7px 2px; color:var(--label-tertiary); min-height:52px; }
+  .tab-btn span{ font-size:10.5px; font-weight:600; }
+  .tab-btn.active{ color:var(--accent); }
+  .tab-btn svg{ width:22px; height:22px; }
+
+  /* Toast */
+  #toast{
+    position:fixed; top:calc(env(safe-area-inset-top,0px) + 14px); left:50%;
+    transform:translate(-50%,-140%);
+    background:var(--label-primary); color:var(--bg);
+    padding:12px 22px; border-radius:14px; font-size:14px; font-weight:600;
+    z-index:60; transition:transform 0.35s cubic-bezier(.2,.9,.3,1.2);
+    max-width:88%; text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  }
+  #toast.show{ transform:translate(-50%,0); }
+
+  /* Modal */
+  #modal-root{ position:fixed; inset:0; z-index:50; pointer-events:none; }
+  #modal-root.show{ pointer-events:auto; }
+  .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,0.42); display:flex; align-items:flex-end; justify-content:center; }
+  .modal-sheet{ background:var(--bg-elevated); width:100%; max-width:480px; border-radius:24px 24px 0 0; padding:24px 20px calc(24px + env(safe-area-inset-bottom,0px)); animation:slideUp 0.25s ease; }
+  @keyframes slideUp{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
+  .modal-title{ font-size:18px; font-weight:700; margin-bottom:8px; }
+  .modal-message{ font-size:15px; color:var(--label-secondary); margin-bottom:22px; line-height:1.45; }
+  .modal-actions{ display:flex; gap:10px; }
+  .modal-actions > button{ flex:1; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <main id="app-content"></main>
+    <nav class="tab-bar" id="tab-bar">
+      <button class="tab-btn" data-action="nav" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h3v-6h4v6h3a1 1 0 0 0 1-1v-9"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="tab-btn" data-action="nav" data-view="add">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+        <span>Add</span>
+      </button>
+      <button class="tab-btn" data-action="nav" data-view="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+        <span>History</span>
+      </button>
+      <button class="tab-btn" data-action="nav" data-view="insights">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+        <span>Insights</span>
+      </button>
+      <button class="tab-btn" data-action="nav" data-view="goals">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/></svg>
+        <span>Goals</span>
+      </button>
+      <button class="tab-btn" data-action="nav" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a7.9 7.9 0 0 0 0-3l1.9-1.4-2-3.4-2.2.9a7.7 7.7 0 0 0-2.6-1.5L14.1 2h-4.2l-.4 2.1a7.7 7.7 0 0 0-2.6 1.5l-2.2-.9-2 3.4L4.6 9.5a7.9 7.9 0 0 0 0 3l-1.9 1.4 2 3.4 2.2-.9c.77.66 1.65 1.17 2.6 1.5l.4 2.1h4.2l.4-2.1a7.7 7.7 0 0 0 2.6-1.5l2.2.9 2-3.4-1.9-1.4Z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+  </div>
+  <div id="toast"></div>
+  <div id="modal-root"></div>
+
+<script>
+'use strict';
+
+/* ---------------------------------------------------------
+   STATE
+   All data lives in memory for this session only. Browser
+   storage APIs (localStorage/sessionStorage) are not available
+   inside Claude Artifacts, so nothing persists across a reload.
+   See the Settings tab for a visible note about this.
+--------------------------------------------------------- */
+const state = {
+  theme: 'auto',
+  currentView: 'dashboard',
+  shifts: [],
+  goals: [],
+  settings: {
+    frequency: 'biweekly',
+    customLengthDays: 14,
+    anchorDate: '2026-06-29',
+    periodStartTime: '00:00',
+    periodEndTime: '23:59',
+    defaultWage: 17.5,
+  },
+  editingShiftId: null,
+  editingGoalId: null,
+  showGoalForm: false,
+  historySort: 'newest',
+  historyFilterPeriod: 'all',
+  pendingDelete: null,
+};
+
+const PALETTE = {
+  light: { base:'#5856D6', cash:'#FF9F0A', card:'#5AC8FA', bonus:'#BF5AF2' },
+  dark:  { base:'#7D7AFF', cash:'#FFB340', card:'#64D2FF', bonus:'#DA8FFF' },
+};
+function palette(){
+  const t = document.documentElement.getAttribute('data-theme') || 'light';
+  return PALETTE[t] || PALETTE.light;
+}
+
+const ICONS = {
+  chevron: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-8 0 1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  trophy: '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v4a4 4 0 0 1-8 0Z"/><path d="M8 4H5a3 3 0 0 0 3 4M16 4h3a3 3 0 0 1-3 4"/><path d="M12 12v3M9 20h6M10 17h4v3h-4Z"/></svg>',
+  trendUp: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17 10 11l4 4 6-7"/><path d="M14 8h6v6"/></svg>',
+  trendDown: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 10 13l4-4 6 7"/><path d="M14 16h6v-6"/></svg>',
+  trendFlat: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16"/></svg>',
+  coin: '<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 15.2c.4.7 1.3 1.2 2.5 1.2 1.7 0 2.7-.9 2.7-2 0-3-5.4-1.4-5.4-4.3 0-1.1 1-2 2.7-2 1.2 0 2.1.5 2.5 1.2M12 6.5v11"/></svg>',
+};
+
+/* ---------------------------------------------------------
+   DATE / TIME HELPERS
+--------------------------------------------------------- */
+function pad2(n){ return n < 10 ? '0' + n : '' + n; }
+function todayISO(){ const d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+function toISODate(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+function startOfDay(d){ const c = new Date(d); c.setHours(0,0,0,0); return c; }
+function addDays(d, n){ const c = new Date(d); c.setDate(c.getDate()+n); return c; }
+function lastDayOfMonth(y, m){ return new Date(y, m+1, 0).getDate(); }
+function combineDateTime(dateStr, timeStr){
+  if(!dateStr) return null;
+  const t = (timeStr && timeStr.length >= 4) ? timeStr : '00:00';
+  return new Date(dateStr + 'T' + t + ':00');
+}
+
+function computeDurationHours(startTime, endTime){
+  if(!startTime || !endTime) return null;
+  const sp = startTime.split(':').map(Number);
+  const ep = endTime.split(':').map(Number);
+  let startMin = sp[0]*60 + sp[1];
+  let endMin = ep[0]*60 + ep[1];
+  if(endMin <= startMin) endMin += 24*60;
+  return Math.round(((endMin - startMin)/60) * 100) / 100;
+}
+
+function generatePeriodForDate(dateObj, settings){
+  const freq = settings.frequency;
+  const d0 = startOfDay(dateObj);
+  if(freq === 'semimonthly'){
+    const y = d0.getFullYear(), m = d0.getMonth(), day = d0.getDate();
+    if(day <= 15) return { startDate: toISODate(new Date(y,m,1)), endDate: toISODate(new Date(y,m,15)) };
+    return { startDate: toISODate(new Date(y,m,16)), endDate: toISODate(new Date(y,m,lastDayOfMonth(y,m))) };
+  }
+  if(freq === 'monthly'){
+    const y = d0.getFullYear(), m = d0.getMonth();
+    return { startDate: toISODate(new Date(y,m,1)), endDate: toISODate(new Date(y,m,lastDayOfMonth(y,m))) };
+  }
+  let lengthDays = freq === 'weekly' ? 7 : freq === 'biweekly' ? 14 : Math.max(1, parseInt(settings.customLengthDays,10) || 14);
+  const anchor = startOfDay(combineDateTime(settings.anchorDate || toISODate(d0), '00:00'));
+  const diffDays = Math.round((d0 - anchor) / 86400000);
+  const periodIndex = Math.floor(diffDays / lengthDays);
+  const start = addDays(anchor, periodIndex * lengthDays);
+  const end = addDays(start, lengthDays - 1);
+  return { startDate: toISODate(start), endDate: toISODate(end) };
+}
+function generateDefaultPeriod(dateObj, settings){
+  const p = generatePeriodForDate(dateObj, settings);
+  return {
+    periodStartDate: p.startDate,
+    periodStartTime: settings.periodStartTime || '00:00',
+    periodEndDate: p.endDate,
+    periodEndTime: settings.periodEndTime || '23:59',
+  };
+}
+
+function formatDatePretty(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  const opts = { month:'short', day:'numeric' };
+  if(d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('en-US', opts);
+}
+function formatTimePretty(timeStr){
+  if(!timeStr) return '';
+  const p = timeStr.split(':').map(Number);
+  const d = new Date(); d.setHours(p[0], p[1] || 0, 0, 0);
+  return d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+}
+function formatPeriodRange(sd, st, ed, et){
+  return formatDatePretty(sd) + ', ' + formatTimePretty(st) + '  –  ' + formatDatePretty(ed) + ', ' + formatTimePretty(et);
+}
+function formatPeriodShort(sd, ed){
+  return formatDatePretty(sd) + ' – ' + formatDatePretty(ed);
+}
+function formatShiftDateLabel(dateStr){
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' });
+}
+
+/* ---------------------------------------------------------
+   MONEY / SHIFT MATH
+--------------------------------------------------------- */
+function fmtMoney(n){
+  n = isFinite(n) ? n : 0;
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
+function fmtHours(n){
+  n = isFinite(n) ? n : 0;
+  return n.toFixed(2);
+}
+
+function deriveShift(s){
+  const hours = parseFloat(s.hoursWorked) || 0;
+  const wage = parseFloat(s.hourlyWage) || 0;
+  const cash = parseFloat(s.cashTips) || 0;
+  const card = parseFloat(s.cardTips) || 0;
+  const other = parseFloat(s.otherPay) || 0;
+  const basePay = hours * wage;
+  const totalTips = cash + card;
+  const totalPay = basePay + totalTips + other;
+  const tipsPerHour = hours > 0 ? totalTips / hours : 0;
+  const effectiveRate = hours > 0 ? totalPay / hours : 0;
+  return { hours, wage, cash, card, other, basePay, totalTips, totalPay, tipsPerHour, effectiveRate };
+}
+
+function periodKey(s){
+  return s.periodStartDate + '|' + s.periodStartTime + '|' + s.periodEndDate + '|' + s.periodEndTime;
+}
+function getDistinctPeriods(){
+  const map = new Map();
+  state.shifts.forEach(function(s){
+    const key = periodKey(s);
+    if(!map.has(key)){
+      map.set(key, { periodStartDate:s.periodStartDate, periodStartTime:s.periodStartTime, periodEndDate:s.periodEndDate, periodEndTime:s.periodEndTime, shifts:[] });
+    }
+    map.get(key).shifts.push(s);
+  });
+  return map;
+}
+function getCurrentPeriodData(){
+  const now = new Date();
+  const periods = getDistinctPeriods();
+  let match = null;
+  periods.forEach(function(p){
+    if(match) return;
+    const start = combineDateTime(p.periodStartDate, p.periodStartTime);
+    const end = combineDateTime(p.periodEndDate, p.periodEndTime);
+    if(now >= start && now <= end) match = p;
+  });
+  if(match) return match;
+  const gen = generateDefaultPeriod(now, state.settings);
+  return { periodStartDate: gen.periodStartDate, periodStartTime: gen.periodStartTime, periodEndDate: gen.periodEndDate, periodEndTime: gen.periodEndTime, shifts: [] };
+}
+
+function computeStats(shiftsArr){
+  let totalHours=0, totalBase=0, totalCash=0, totalCard=0, totalOther=0, totalGross=0;
+  shiftsArr.forEach(function(s){
+    const d = deriveShift(s);
+    totalHours += d.hours; totalBase += d.basePay; totalCash += d.cash; totalCard += d.card; totalOther += d.other; totalGross += d.totalPay;
+  });
+  const totalTips = totalCash + totalCard;
+  const avgEffectiveRate = totalHours > 0 ? totalGross/totalHours : 0;
+  const avgTipsPerHour = totalHours > 0 ? totalTips/totalHours : 0;
+  return { count: shiftsArr.length, totalHours, totalBase, totalCash, totalCard, totalOther, totalGross, totalTips, avgEffectiveRate, avgTipsPerHour };
+}
+function getBestBy(fn){
+  if(state.shifts.length === 0) return null;
+  return state.shifts.reduce(function(best, s){ return (!best || fn(s) > fn(best)) ? s : best; }, null);
+}
+function computeTrend(){
+  const sorted = state.shifts.slice().sort(function(a,b){
+    return new Date(a.shiftDate + 'T' + (a.shiftStart || '00:00')) - new Date(b.shiftDate + 'T' + (b.shiftStart || '00:00'));
+  });
+  if(sorted.length < 4) return null;
+  const recentN = Math.min(3, Math.floor(sorted.length/2));
+  const recent = sorted.slice(-recentN);
+  const prior = sorted.slice(0, sorted.length - recentN);
+  const recentAvg = computeStats(recent).avgEffectiveRate;
+  const priorAvg = computeStats(prior).avgEffectiveRate;
+  if(priorAvg === 0) return null;
+  const pctChange = ((recentAvg - priorAvg)/priorAvg) * 100;
+  return { recentAvg, priorAvg, pctChange };
+}
+function computeMonthTotal(){
+  const now = new Date(); const y = now.getFullYear(), m = now.getMonth();
+  const monthShifts = state.shifts.filter(function(s){
+    const d = new Date(s.shiftDate + 'T00:00:00');
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+  return computeStats(monthShifts);
+}
+function computeGoalProgress(goal){
+  const relevant = state.shifts.filter(function(s){ return s.shiftDate >= goal.startDate; });
+  const stats = computeStats(relevant);
+  const current = stats.totalGross;
+  const remaining = Math.max(0, goal.targetAmount - current);
+  const percent = goal.targetAmount > 0 ? Math.min(100, (current/goal.targetAmount) * 100) : 0;
+  const today = startOfDay(new Date());
+  const target = startOfDay(new Date(goal.targetDate + 'T00:00:00'));
+  const rawDays = Math.round((target - today)/86400000);
+  const daysLeft = Math.max(0, rawDays);
+  const weeksLeftForCalc = Math.max(daysLeft/7, 1);
+  const isComplete = percent >= 100;
+  const weeklyNeeded = remaining > 0 ? remaining/weeksLeftForCalc : 0;
+  const isPastDue = rawDays < 0 && !isComplete;
+  return { current, remaining, percent, daysLeft, weeklyNeeded, isComplete, isPastDue };
+}
+function sortShifts(list, mode){
+  const arr = list.slice();
+  if(mode === 'oldest'){
+    arr.sort(function(a,b){ return new Date(a.shiftDate) - new Date(b.shiftDate) || a.createdAt - b.createdAt; });
+  } else if(mode === 'highest-pay'){
+    arr.sort(function(a,b){ return deriveShift(b).totalPay - deriveShift(a).totalPay; });
+  } else if(mode === 'highest-tips'){
+    arr.sort(function(a,b){ return deriveShift(b).totalTips - deriveShift(a).totalTips; });
+  } else if(mode === 'highest-rate'){
+    arr.sort(function(a,b){ return deriveShift(b).effectiveRate - deriveShift(a).effectiveRate; });
+  } else {
+    arr.sort(function(a,b){ return new Date(b.shiftDate) - new Date(a.shiftDate) || b.createdAt - a.createdAt; });
+  }
+  return arr;
+}
+
+/* ---------------------------------------------------------
+   MISC HELPERS
+--------------------------------------------------------- */
+function uid(){ return 'id_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+function val(id){ const e = document.getElementById(id); return e ? e.value.trim() : ''; }
+function escapeHTML(str){
+  return String(str).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
+/* ---------------------------------------------------------
+   RENDER: shared bits
+--------------------------------------------------------- */
+function headerHTML(title, subtitle){
+  return '<div class="page-header"><h1 class="page-title">' + title + '</h1>' +
+    (subtitle ? '<div class="page-subtitle">' + subtitle + '</div>' : '') + '</div>';
+}
+function renderEmptyState(title, subtitle, addView){
+  return '<div class="empty-state">' +
+    '<div class="empty-icon">' + ICONS.coin + '</div>' +
+    '<div class="empty-title">' + title + '</div>' +
+    '<div class="empty-sub">' + subtitle + '</div>' +
+    (addView ? '<button class="btn-primary" data-action="new-shift">Add Shift</button>' : '') +
+    '</div>';
+}
+function renderRing(parts, total){
+  const size = 158, stroke = 18, r = (size - stroke)/2, c = 2 * Math.PI * r;
+  let offsetAcc = 0;
+  const active = parts.filter(function(p){ return p.val > 0; });
+  const segs = active.map(function(p){
+    const frac = p.val/total;
+    const dash = frac * c;
+    const seg = '<circle cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + r + '" fill="none" stroke="' + p.color + '" stroke-width="' + stroke + '" stroke-dasharray="' + dash + ' ' + (c - dash) + '" stroke-dashoffset="' + (-offsetAcc) + '" transform="rotate(-90 ' + (size/2) + ' ' + (size/2) + ')"/>';
+    offsetAcc += dash;
+    return seg;
+  }).join('');
+  const legend = active.map(function(p){
+    return '<div class="legend-row"><span class="legend-dot" style="background:' + p.color + '"></span><span class="legend-label">' + p.label + '</span><span class="legend-val">' + fmtMoney(p.val) + '</span></div>';
+  }).join('');
+  return '<div class="ring-wrap"><svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '">' +
+    '<circle cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + r + '" fill="none" stroke="var(--separator)" stroke-width="' + stroke + '"/>' +
+    segs + '</svg><div class="ring-center"><div class="ring-center-value">' + fmtMoney(total) + '</div><div class="ring-center-label">Gross</div></div></div>' +
+    '<div class="legend">' + legend + '</div>';
+}
+function renderShiftCard(s, overallAvgRate, bestShift){
+  const d = deriveShift(s);
+  const isBest = bestShift && bestShift.id === s.id && state.shifts.length > 1;
+  const isAbove = state.shifts.length >= 2 && d.effectiveRate > overallAvgRate;
+  let timeLine = '';
+  if(s.shiftStart || s.shiftEnd){
+    timeLine = '<div class="shift-time">' + (s.shiftStart ? formatTimePretty(s.shiftStart) : '—') + ' – ' + (s.shiftEnd ? formatTimePretty(s.shiftEnd) : '—') + '</div>';
+  }
+  return '<div class="shift-card" data-action="edit-shift" data-id="' + s.id + '">' +
+    '<div class="shift-card-top"><div><div class="shift-date">' + formatShiftDateLabel(s.shiftDate) + '</div>' + timeLine + '</div>' +
+    '<div class="shift-total">' + fmtMoney(d.totalPay) + '</div></div>' +
+    ((isBest || isAbove) ? '<div class="shift-card-badges">' +
+      (isBest ? '<span class="badge badge-best">' + ICONS.trophy + ' Best yet</span>' : '') +
+      (isAbove ? '<span class="badge badge-above">Above avg</span>' : '') + '</div>' : '') +
+    '<div class="shift-card-meta"><span>' + fmtHours(d.hours) + ' hrs</span><span class="dot">·</span>' +
+    '<span>' + fmtMoney(d.tipsPerHour) + '/hr tips</span><span class="dot">·</span>' +
+    '<span>' + fmtMoney(d.effectiveRate) + '/hr total</span></div></div>';
+}
+
+/* ---------------------------------------------------------
+   RENDER: views
+--------------------------------------------------------- */
+function renderDashboard(){
+  const period = getCurrentPeriodData();
+  const stats = computeStats(period.shifts);
+  const overall = computeStats(state.shifts);
+  const trend = computeTrend();
+  const monthStats = computeMonthTotal();
+  const recent = state.shifts.slice().sort(function(a,b){ return b.createdAt - a.createdAt; }).slice(0,3);
+  const bestPayShift = getBestBy(function(s){ return deriveShift(s).totalPay; });
+  const pal = palette();
+
+  const compParts = [
+    { label:'Base pay', val: stats.totalBase, color: pal.base },
+    { label:'Cash tips', val: stats.totalCash, color: pal.cash },
+    { label:'Card tips', val: stats.totalCard, color: pal.card },
+    { label:'Bonus', val: stats.totalOther, color: pal.bonus },
+  ];
+
+  let trendBlock = '';
+  if(trend){
+    const dir = trend.pctChange > 1 ? 'up' : (trend.pctChange < -1 ? 'down' : 'flat');
+    const icon = dir === 'up' ? ICONS.trendUp : (dir === 'down' ? ICONS.trendDown : ICONS.trendFlat);
+    const title = dir === 'up' ? 'Trending up' : (dir === 'down' ? 'Trending down' : 'Holding steady');
+    trendBlock = '<div class="card trend-card"><div class="trend-icon ' + dir + '">' + icon + '</div><div>' +
+      '<div class="trend-title">' + title + '</div>' +
+      '<div class="trend-sub">Effective rate ' + (trend.pctChange >= 0 ? 'up' : 'down') + ' ' + Math.abs(trend.pctChange).toFixed(0) + '% over your recent shifts</div>' +
+      '</div></div>';
+  }
+
+  return headerHTML('Dashboard', new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' })) +
+    '<div class="wallet-card">' +
+      '<div class="wallet-top"><span class="wallet-label">CURRENT PAY PERIOD</span>' +
+      '<span class="wallet-range">' + formatPeriodRange(period.periodStartDate, period.periodStartTime, period.periodEndDate, period.periodEndTime) + '</span></div>' +
+      '<div class="wallet-amount">' + fmtMoney(stats.totalGross) + '</div>' +
+      '<div class="wallet-stats-row">' +
+        '<div><span class="wallet-stat-num">' + fmtHours(stats.totalHours) + '</span><span class="wallet-stat-label">hours</span></div>' +
+        '<div><span class="wallet-stat-num">' + stats.count + '</span><span class="wallet-stat-label">' + (stats.count===1?'shift':'shifts') + '</span></div>' +
+        '<div><span class="wallet-stat-num">' + fmtMoney(stats.avgEffectiveRate) + '</span><span class="wallet-stat-label">avg / hr</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="card">' +
+      '<div class="card-title-row"><h3>Pay breakdown</h3></div>' +
+      (stats.totalGross > 0 ? renderRing(compParts, stats.totalGross) : '<div class="empty-mini">Log a shift to see your pay breakdown.</div>') +
+    '</div>' +
+    '<div class="stat-grid">' +
+      '<div class="stat-tile"><div class="stat-tile-label">Tips / hour</div><div class="stat-tile-value" style="color:' + pal.cash + '">' + fmtMoney(stats.avgTipsPerHour) + '</div></div>' +
+      '<div class="stat-tile"><div class="stat-tile-label">Total tips</div><div class="stat-tile-value">' + fmtMoney(stats.totalTips) + '</div></div>' +
+      '<div class="stat-tile"><div class="stat-tile-label">Bonus / other</div><div class="stat-tile-value">' + fmtMoney(stats.totalOther) + '</div></div>' +
+      '<div class="stat-tile"><div class="stat-tile-label">This month</div><div class="stat-tile-value">' + fmtMoney(monthStats.totalGross) + '</div></div>' +
+    '</div>' +
+    trendBlock +
+    '<div class="section-row"><h3>Recent shifts</h3><button class="link-btn" data-action="nav" data-view="history">See all</button></div>' +
+    (recent.length ? recent.map(function(s){ return renderShiftCard(s, overall.avgEffectiveRate, bestPayShift); }).join('') : renderEmptyState('No shifts yet', 'Tap Add Shift to log your first one.', true));
+}
+
+function renderHistoryView(){
+  const periodsMap = getDistinctPeriods();
+  const periodList = [];
+  periodsMap.forEach(function(p, key){ periodList.push(Object.assign({ key:key }, p)); });
+  periodList.sort(function(a,b){ return new Date(b.periodStartDate) - new Date(a.periodStartDate); });
+
+  let list = state.shifts.slice();
+  if(state.historyFilterPeriod !== 'all'){
+    list = list.filter(function(s){ return periodKey(s) === state.historyFilterPeriod; });
+  }
+  const overallAvg = computeStats(state.shifts).avgEffectiveRate;
+  const best = getBestBy(function(s){ return deriveShift(s).totalPay; });
+  list = sortShifts(list, state.historySort);
+
+  const sortOptions = [
+    ['newest','Newest first'], ['oldest','Oldest first'], ['highest-pay','Highest pay'],
+    ['highest-tips','Highest tips'], ['highest-rate','Highest $/hr'],
+  ];
+
+  return headerHTML('History') +
+    '<div class="filter-row">' +
+      '<div class="select-wrap"><select id="historySortSelect">' +
+        sortOptions.map(function(o){ return '<option value="' + o[0] + '"' + (state.historySort===o[0]?' selected':'') + '>' + o[1] + '</option>'; }).join('') +
+      '</select></div>' +
+      '<div class="select-wrap"><select id="historyFilterSelect">' +
+        '<option value="all"' + (state.historyFilterPeriod==='all'?' selected':'') + '>All periods</option>' +
+        periodList.map(function(p){ return '<option value="' + p.key + '"' + (state.historyFilterPeriod===p.key?' selected':'') + '>' + formatPeriodShort(p.periodStartDate,p.periodEndDate) + '</option>'; }).join('') +
+      '</select></div>' +
+    '</div>' +
+    (list.length ? list.map(function(s){ return renderShiftCard(s, overallAvg, best); }).join('') : renderEmptyState('No shifts found', 'Try a different filter, or log a new shift.', true));
+}
+
+function renderBestCard(label, shift, fmtFn){
+  if(!shift) return '<div class="card best-card"><div class="best-label">' + label + '</div><div class="best-empty">—</div></div>';
+  return '<div class="card best-card"><div class="best-label">' + label + '</div>' +
+    '<div class="best-value">' + fmtFn(shift) + '</div>' +
+    '<div class="best-date">' + formatShiftDateLabel(shift.shiftDate) + '</div></div>';
+}
+function renderInsightsView(){
+  if(state.shifts.length === 0){
+    return headerHTML('Insights') + renderEmptyState('No insights yet', 'Log a few shifts to unlock stats.', true);
+  }
+  const overall = computeStats(state.shifts);
+  const bestPay = getBestBy(function(s){ return deriveShift(s).totalPay; });
+  const bestTips = getBestBy(function(s){ return deriveShift(s).totalTips; });
+  const bestRate = getBestBy(function(s){ return deriveShift(s).tipsPerHour; });
+  const trend = computeTrend();
+  const monthStats = computeMonthTotal();
+  const monthName = new Date().toLocaleDateString('en-US', { month:'long' });
+  const pal = palette();
+
+  let trendBlock = '';
+  if(trend){
+    const dir = trend.pctChange > 1 ? 'up' : (trend.pctChange < -1 ? 'down' : 'flat');
+    const icon = dir === 'up' ? ICONS.trendUp : (dir === 'down' ? ICONS.trendDown : ICONS.trendFlat);
+    const title = dir === 'up' ? 'Trending up' : (dir === 'down' ? 'Trending down' : 'Holding steady');
+    trendBlock = '<div class="section-label">Trend</div><div class="card trend-card"><div class="trend-icon ' + dir + '">' + icon + '</div><div>' +
+      '<div class="trend-title">' + title + '</div>' +
+      '<div class="trend-sub">Recent avg ' + fmtMoney(trend.recentAvg) + '/hr vs ' + fmtMoney(trend.priorAvg) + '/hr before</div>' +
+      '</div></div>';
+  }
+
+  return headerHTML('Insights') +
+    '<div class="section-label">Best shifts</div>' +
+    '<div class="best-grid">' +
+      renderBestCard('Highest pay', bestPay, function(s){ return fmtMoney(deriveShift(s).totalPay); }) +
+      renderBestCard('Highest tips', bestTips, function(s){ return fmtMoney(deriveShift(s).totalTips); }) +
+      renderBestCard('Best tips/hr', bestRate, function(s){ return fmtMoney(deriveShift(s).tipsPerHour); }) +
+    '</div>' +
+    '<div class="section-label">Averages</div>' +
+    '<div class="stat-grid">' +
+      '<div class="stat-tile"><div class="stat-tile-label">Avg pay / shift</div><div class="stat-tile-value">' + fmtMoney(overall.totalGross/overall.count) + '</div></div>' +
+      '<div class="stat-tile"><div class="stat-tile-label">Avg hours / shift</div><div class="stat-tile-value">' + fmtHours(overall.totalHours/overall.count) + '</div></div>' +
+      '<div class="stat-tile"><div class="stat-tile-label">Avg tips / hr</div><div class="stat-tile-value" style="color:' + pal.cash + '">' + fmtMoney(overall.avgTipsPerHour) + '</div></div>' +
+      '<div class="stat-tile"><div class="stat-tile-label">Avg effective rate</div><div class="stat-tile-value">' + fmtMoney(overall.avgEffectiveRate) + '</div></div>' +
+    '</div>' +
+    '<div class="section-label">' + monthName + ' so far</div>' +
+    '<div class="card month-card"><div class="month-amount">' + fmtMoney(monthStats.totalGross) + '</div>' +
+    '<div class="month-sub">' + monthStats.count + ' ' + (monthStats.count===1?'shift':'shifts') + ' · ' + fmtHours(monthStats.totalHours) + ' hrs</div></div>' +
+    trendBlock;
+}
+
+function renderGoalForm(){
+  const editing = state.editingGoalId ? state.goals.find(function(g){ return g.id === state.editingGoalId; }) : null;
+  return '<div class="card form-card"><h3>' + (editing ? 'Edit Goal' : 'New Goal') + '</h3>' +
+    '<div class="form-field"><label>Goal name</label>' +
+    '<input type="text" id="goalNameInput" placeholder="e.g. New camera kit" value="' + (editing ? escapeHTML(editing.name) : '') + '">' +
+    '<div class="field-error" id="err-goalName"></div></div>' +
+    '<div class="form-field"><label>Target amount</label>' +
+    '<input type="number" inputmode="decimal" step="0.01" min="0" id="goalAmountInput" placeholder="0.00" value="' + (editing ? editing.targetAmount : '') + '">' +
+    '<div class="field-error" id="err-goalAmount"></div></div>' +
+    '<div class="form-field"><label>Target date</label>' +
+    '<input type="date" id="goalDateInput" value="' + (editing ? editing.targetDate : '') + '">' +
+    '<div class="field-error" id="err-goalDate"></div></div>' +
+    '<div class="form-actions"><button class="btn-secondary" data-action="cancel-goal">Cancel</button>' +
+    '<button class="btn-primary" data-action="save-goal">' + (editing ? 'Save Changes' : 'Add Goal') + '</button></div></div>';
+}
+function renderGoalCard(g){
+  const p = computeGoalProgress(g);
+  let bottomLine;
+  if(p.isComplete) bottomLine = '<div class="goal-complete">🎉 Goal reached!</div>';
+  else if(p.isPastDue) bottomLine = '<div class="goal-need">Target date passed · ' + fmtMoney(p.remaining) + ' still needed</div>';
+  else bottomLine = '<div class="goal-need">' + fmtMoney(p.weeklyNeeded) + '/week needed · ' + fmtMoney(p.remaining) + ' left</div>';
+  return '<div class="card goal-card"><div class="goal-card-top"><div>' +
+    '<div class="goal-name">' + escapeHTML(g.name) + '</div>' +
+    '<div class="goal-target">Goal: ' + fmtMoney(g.targetAmount) + ' by ' + formatDatePretty(g.targetDate) + '</div></div>' +
+    '<div class="goal-actions"><button class="icon-btn" data-action="edit-goal" data-id="' + g.id + '">' + ICONS.pencil + '</button>' +
+    '<button class="icon-btn" data-action="request-delete-goal" data-id="' + g.id + '">' + ICONS.trash + '</button></div></div>' +
+    '<div class="progress-track"><div class="progress-fill" style="width:' + p.percent.toFixed(1) + '%"></div></div>' +
+    '<div class="goal-stats-row"><span>' + p.percent.toFixed(0) + '% complete</span><span>' + fmtMoney(p.current) + ' saved</span></div>' +
+    bottomLine + '</div>';
+}
+function renderGoalsView(){
+  const formHTML = state.showGoalForm ? renderGoalForm() : '';
+  let goalsHTML = '';
+  if(state.goals.length){
+    goalsHTML = state.goals.map(renderGoalCard).join('');
+  } else if(!state.showGoalForm){
+    goalsHTML = '<div class="empty-state"><div class="empty-icon">' + ICONS.coin + '</div>' +
+      '<div class="empty-title">No goals yet</div>' +
+      '<div class="empty-sub">Set a savings goal to stay motivated.</div>' +
+      '<button class="btn-primary" data-action="new-goal">New Goal</button></div>';
+  }
+  return headerHTML('Goals') +
+    (!state.showGoalForm ? '<button class="btn-primary" data-action="new-goal" style="margin-bottom:16px;">+ New Goal</button>' : '') +
+    formHTML + goalsHTML;
+}
+
+function renderSettingsView(){
+  const s = state.settings;
+  return headerHTML('Settings') +
+    '<div class="section-label">Appearance</div>' +
+    '<div class="segmented">' +
+      '<button class="seg-btn ' + (state.theme==='auto'?'active':'') + '" data-action="toggle-theme" data-value="auto">Auto</button>' +
+      '<button class="seg-btn ' + (state.theme==='light'?'active':'') + '" data-action="toggle-theme" data-value="light">Light</button>' +
+      '<button class="seg-btn ' + (state.theme==='dark'?'active':'') + '" data-action="toggle-theme" data-value="dark">Dark</button>' +
+    '</div>' +
+    '<div class="section-label">Pay period defaults</div>' +
+    '<div class="card form-card">' +
+      '<div class="form-field"><label>Frequency</label><div class="select-wrap"><select id="settingsFrequencySelect">' +
+        '<option value="weekly"' + (s.frequency==='weekly'?' selected':'') + '>Weekly</option>' +
+        '<option value="biweekly"' + (s.frequency==='biweekly'?' selected':'') + '>Biweekly</option>' +
+        '<option value="semimonthly"' + (s.frequency==='semimonthly'?' selected':'') + '>Semimonthly (1–15, 16–end)</option>' +
+        '<option value="monthly"' + (s.frequency==='monthly'?' selected':'') + '>Monthly</option>' +
+        '<option value="custom"' + (s.frequency==='custom'?' selected':'') + '>Custom length</option>' +
+      '</select></div></div>' +
+      '<div class="form-field" id="customLengthRow" style="display:' + (s.frequency==='custom'?'':'none') + '">' +
+        '<label>Custom length (days)</label><input type="number" min="1" id="settingsCustomLengthInput" value="' + s.customLengthDays + '"></div>' +
+      '<div class="form-field"><label>Reference start date</label>' +
+      '<input type="date" id="settingsAnchorDateInput" value="' + s.anchorDate + '">' +
+      '<div class="hint">Any date a pay period of yours has started before. Used to line up future periods.</div></div>' +
+      '<div class="form-row-2">' +
+        '<div class="form-field"><label>Cutoff start time</label><input type="time" id="settingsStartTimeInput" value="' + s.periodStartTime + '"></div>' +
+        '<div class="form-field"><label>Cutoff end time</label><input type="time" id="settingsEndTimeInput" value="' + s.periodEndTime + '"></div>' +
+      '</div>' +
+      '<div class="form-field"><label>Default hourly wage</label>' +
+      '<input type="number" step="0.01" min="0" inputmode="decimal" id="settingsDefaultWageInput" value="' + s.defaultWage + '"></div>' +
+      '<button class="btn-primary" data-action="save-settings">Save Settings</button>' +
+    '</div>' +
+    '<div class="section-label">Data</div>' +
+    '<div class="card list-card">' +
+      '<button class="list-row" data-action="request-clear-demo"><span>Clear demo data</span>' + ICONS.chevron + '</button>' +
+      '<button class="list-row destructive" data-action="request-reset-all"><span>Reset all data</span>' + ICONS.chevron + '</button>' +
+    '</div>' +
+    '<div class="storage-note"><strong>About your data:</strong> This app stores everything in memory for the current session only — there is no backend, login, or external server. Because browser storage APIs are not available inside Claude Artifacts, your data resets if you reload or close this page. Save this file and open it in your own browser to add persistent local storage.</div>';
+}
+
+function renderAddView(){
+  const editing = state.editingShiftId ? state.shifts.find(function(s){ return s.id === state.editingShiftId; }) : null;
+  let d;
+  if(editing){
+    d = editing;
+  } else {
+    const gen = generateDefaultPeriod(new Date(), state.settings);
+    d = { shiftDate: todayISO(), shiftStart:'', shiftEnd:'', hoursWorked:'', hourlyWage: state.settings.defaultWage || '', cashTips:'', cardTips:'', otherPay:'', notes:'',
+      periodStartDate: gen.periodStartDate, periodStartTime: gen.periodStartTime, periodEndDate: gen.periodEndDate, periodEndTime: gen.periodEndTime };
+  }
+  return headerHTML(editing ? 'Edit Shift' : 'Add Shift') +
+    '<div class="card form-card">' +
+      '<div class="form-section-title">Shift details</div>' +
+      '<div class="form-field"><label>Shift date</label><input type="date" id="shiftDateInput" value="' + (d.shiftDate||'') + '">' +
+      '<div class="field-error" id="err-shiftDate"></div></div>' +
+      '<div class="form-row-2">' +
+        '<div class="form-field"><label>Start time <span class="optional">optional</span></label><input type="time" id="shiftStartInput" value="' + (d.shiftStart||'') + '"></div>' +
+        '<div class="form-field"><label>End time <span class="optional">optional</span></label><input type="time" id="shiftEndInput" value="' + (d.shiftEnd||'') + '"></div>' +
+      '</div>' +
+      '<div class="form-field"><label>Hours worked</label><input type="number" step="0.01" min="0" inputmode="decimal" id="hoursWorkedInput" value="' + (d.hoursWorked||'') + '">' +
+      '<div class="hint">Fills in automatically from start/end time — edit anytime.</div>' +
+      '<div class="field-error" id="err-hoursWorked"></div></div>' +
+
+      '<div class="form-section-title">Pay period</div>' +
+      '<div class="form-row-2">' +
+        '<div class="form-field"><label>Period start date</label><input type="date" id="periodStartDateInput" value="' + (d.periodStartDate||'') + '">' +
+        '<div class="field-error" id="err-periodStartDate"></div></div>' +
+        '<div class="form-field"><label>Start time</label><input type="time" id="periodStartTimeInput" value="' + (d.periodStartTime||'00:00') + '"></div>' +
+      '</div>' +
+      '<div class="form-row-2">' +
+        '<div class="form-field"><label>Period end date</label><input type="date" id="periodEndDateInput" value="' + (d.periodEndDate||'') + '">' +
+        '<div class="field-error" id="err-periodEndDate"></div></div>' +
+        '<div class="form-field"><label>End time</label><input type="time" id="periodEndTimeInput" value="' + (d.periodEndTime||'23:59') + '"></div>' +
+      '</div>' +
+      '<div class="period-preview" id="periodPreviewText">Select dates to preview the pay period range.</div>' +
+
+      '<div class="form-section-title">Pay &amp; tips</div>' +
+      '<div class="form-field"><label>Hourly wage</label><input type="number" step="0.01" min="0" inputmode="decimal" id="hourlyWageInput" value="' + (d.hourlyWage||'') + '">' +
+      '<div class="field-error" id="err-hourlyWage"></div></div>' +
+      '<div class="form-row-2">' +
+        '<div class="form-field"><label>Cash tips</label><input type="number" step="0.01" min="0" inputmode="decimal" id="cashTipsInput" value="' + (d.cashTips||'') + '"></div>' +
+        '<div class="form-field"><label>Card tips</label><input type="number" step="0.01" min="0" inputmode="decimal" id="cardTipsInput" value="' + (d.cardTips||'') + '"></div>' +
+      '</div>' +
+      '<div class="form-field"><label>Other pay / bonus</label><input type="number" step="0.01" min="0" inputmode="decimal" id="otherPayInput" value="' + (d.otherPay||'') + '"></div>' +
+
+      '<div class="form-section-title">Notes</div>' +
+      '<div class="form-field"><textarea id="notesInput" placeholder="Optional notes about this shift" rows="3">' + (d.notes?escapeHTML(d.notes):'') + '</textarea></div>' +
+
+      '<div class="form-actions">' +
+        '<button class="btn-secondary" data-action="cancel-form" data-back="' + (editing?'history':'dashboard') + '">Cancel</button>' +
+        '<button class="btn-primary" data-action="save-shift">' + (editing?'Save Changes':'Save Shift') + '</button>' +
+      '</div>' +
+      (editing ? '<button class="btn-text destructive full" data-action="request-delete-shift" data-id="' + editing.id + '">Delete Shift</button>' : '') +
+    '</div>';
+}
+
+const viewRenderers = {
+  dashboard: renderDashboard, add: renderAddView, history: renderHistoryView,
+  insights: renderInsightsView, goals: renderGoalsView, settings: renderSettingsView,
+};
+
+/* ---------------------------------------------------------
+   RENDER ROOT / MODAL / TOAST
+--------------------------------------------------------- */
+function renderApp(){
+  const fn = viewRenderers[state.currentView] || renderDashboard;
+  document.getElementById('app-content').innerHTML = fn();
+  updateTabBarActive();
+  renderModal();
+  if(state.currentView === 'add') updatePeriodPreview();
+  document.getElementById('app-content').scrollTop = document.getElementById('app-content').scrollTop; // no-op keep
+  window.scrollTo(0,0);
+}
+function updateTabBarActive(){
+  document.querySelectorAll('.tab-btn').forEach(function(btn){
+    btn.classList.toggle('active', btn.dataset.view === state.currentView);
+  });
+}
+function renderModal(){
+  const root = document.getElementById('modal-root');
+  if(!state.pendingDelete){ root.innerHTML=''; root.classList.remove('show'); return; }
+  const messages = {
+    shift: 'Delete this shift? This can\'t be undone.',
+    goal: 'Delete this goal? This can\'t be undone.',
+    'clear-demo': 'Remove all demo shifts and the sample goal? Your own entries stay untouched.',
+    'reset-all': 'Reset all data? This permanently deletes every shift and goal you\'ve added.',
+  };
+  const titles = { shift:'Delete Shift', goal:'Delete Goal', 'clear-demo':'Clear Demo Data', 'reset-all':'Reset All Data' };
+  const t = state.pendingDelete.type;
+  root.classList.add('show');
+  root.innerHTML = '<div class="modal-overlay" data-action="cancel-delete"><div class="modal-sheet" onclick="event.stopPropagation()">' +
+    '<div class="modal-title">' + titles[t] + '</div><div class="modal-message">' + messages[t] + '</div>' +
+    '<div class="modal-actions"><button class="btn-secondary" data-action="cancel-delete">Cancel</button>' +
+    '<button class="btn-danger" data-action="confirm-delete">Delete</button></div></div></div>';
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+
+/* ---------------------------------------------------------
+   FORM: period preview + validation
+--------------------------------------------------------- */
+function updatePeriodPreview(){
+  const el = document.getElementById('periodPreviewText');
+  if(!el) return;
+  const sd = val('periodStartDateInput'), st = val('periodStartTimeInput') || '00:00';
+  const ed = val('periodEndDateInput'), et = val('periodEndTimeInput') || '23:59';
+  el.textContent = (sd && ed) ? formatPeriodRange(sd, st, ed, et) : 'Select dates to preview the pay period range.';
+}
+function validateShift(data){
+  const errors = {};
+  if(!data.shiftDate) errors.shiftDate = 'Shift date is required.';
+  if(data.hoursWorked === '' || isNaN(data.hoursWorked) || parseFloat(data.hoursWorked) <= 0) errors.hoursWorked = 'Enter hours greater than 0.';
+  if(data.hourlyWage === '' || isNaN(data.hourlyWage) || parseFloat(data.hourlyWage) < 0) errors.hourlyWage = 'Enter a valid hourly wage.';
+  if(!data.periodStartDate) errors.periodStartDate = 'Required.';
+  if(!data.periodEndDate) errors.periodEndDate = 'Required.';
+  if(data.periodStartDate && data.periodEndDate){
+    const start = combineDateTime(data.periodStartDate, data.periodStartTime || '00:00');
+    const end = combineDateTime(data.periodEndDate, data.periodEndTime || '23:59');
+    if(end <= start) errors.periodEndDate = 'Period end must be after period start.';
+  }
+  return errors;
+}
+function clearFormErrors(){
+  document.querySelectorAll('.field-error').forEach(function(el){ el.textContent = ''; });
+  document.querySelectorAll('.input-error').forEach(function(el){ el.classList.remove('input-error'); });
+}
+function showFormErrors(errors){
+  clearFormErrors();
+  let first = null;
+  Object.keys(errors).forEach(function(k){
+    const errEl = document.getElementById('err-' + k);
+    const inputEl = document.getElementById(k + 'Input');
+    if(errEl) errEl.textContent = errors[k];
+    if(inputEl){ inputEl.classList.add('input-error'); if(!first) first = inputEl; }
+  });
+  if(first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+/* ---------------------------------------------------------
+   ACTIONS
+--------------------------------------------------------- */
+function setView(v){
+  state.currentView = v;
+  if(v !== 'add') state.editingShiftId = null;
+  renderApp();
+}
+function startNewShift(){ state.editingShiftId = null; state.currentView = 'add'; renderApp(); }
+function startEditShift(id){ state.editingShiftId = id; state.currentView = 'add'; renderApp(); }
+
+function saveShiftFromForm(){
+  const data = {
+    shiftDate: val('shiftDateInput'), shiftStart: val('shiftStartInput'), shiftEnd: val('shiftEndInput'),
+    hoursWorked: val('hoursWorkedInput'),
+    periodStartDate: val('periodStartDateInput'), periodStartTime: val('periodStartTimeInput') || '00:00',
+    periodEndDate: val('periodEndDateInput'), periodEndTime: val('periodEndTimeInput') || '23:59',
+    hourlyWage: val('hourlyWageInput'),
+    cashTips: val('cashTipsInput') || '0', cardTips: val('cardTipsInput') || '0', otherPay: val('otherPayInput') || '0',
+    notes: val('notesInput'),
+  };
+  const errors = validateShift(data);
+  if(Object.keys(errors).length > 0){ showFormErrors(errors); return; }
+  if(state.editingShiftId){
+    const idx = state.shifts.findIndex(function(s){ return s.id === state.editingShiftId; });
+    if(idx > -1) state.shifts[idx] = Object.assign({}, state.shifts[idx], data);
+    state.editingShiftId = null;
+    showToast('Shift updated');
+  } else {
+    state.shifts.push(Object.assign({ id: uid(), isDemo:false, createdAt: Date.now() }, data));
+    showToast('Shift saved');
+  }
+  state.currentView = 'history';
+  renderApp();
+}
+function saveGoalFromForm(){
+  const name = val('goalNameInput');
+  const targetAmount = parseFloat(val('goalAmountInput'));
+  const targetDate = val('goalDateInput');
+  const errors = {};
+  if(!name) errors.goalName = 'Give your goal a name.';
+  if(isNaN(targetAmount) || targetAmount <= 0) errors.goalAmount = 'Enter an amount greater than 0.';
+  if(!targetDate) errors.goalDate = 'Choose a target date.';
+  if(Object.keys(errors).length){ showFormErrors(errors); return; }
+  if(state.editingGoalId){
+    const idx = state.goals.findIndex(function(g){ return g.id === state.editingGoalId; });
+    if(idx > -1) state.goals[idx] = Object.assign({}, state.goals[idx], { name, targetAmount, targetDate });
+    showToast('Goal updated');
+  } else {
+    state.goals.push({ id: uid(), name, targetAmount, targetDate, startDate: todayISO(), isDemo:false, createdAt: Date.now() });
+    showToast('Goal added');
+  }
+  state.showGoalForm = false; state.editingGoalId = null;
+  renderApp();
+}
+function saveSettingsFromForm(){
+  state.settings.frequency = val('settingsFrequencySelect');
+  state.settings.customLengthDays = parseInt(val('settingsCustomLengthInput'), 10) || 14;
+  state.settings.anchorDate = val('settingsAnchorDateInput');
+  state.settings.periodStartTime = val('settingsStartTimeInput') || '00:00';
+  state.settings.periodEndTime = val('settingsEndTimeInput') || '23:59';
+  state.settings.defaultWage = parseFloat(val('settingsDefaultWageInput')) || 0;
+  showToast('Settings saved');
+  renderApp();
+}
+function requestDelete(type, id){ state.pendingDelete = { type:type, id:id }; renderApp(); }
+function confirmDelete(){
+  const pd = state.pendingDelete; if(!pd) return;
+  if(pd.type === 'shift'){
+    state.shifts = state.shifts.filter(function(s){ return s.id !== pd.id; });
+    showToast('Shift deleted');
+    if(state.currentView === 'add'){ state.editingShiftId = null; state.currentView = 'history'; }
+  } else if(pd.type === 'goal'){
+    state.goals = state.goals.filter(function(g){ return g.id !== pd.id; });
+    showToast('Goal deleted');
+  } else if(pd.type === 'clear-demo'){
+    state.shifts = state.shifts.filter(function(s){ return !s.isDemo; });
+    state.goals = state.goals.filter(function(g){ return !g.isDemo; });
+    showToast('Demo data cleared');
+  } else if(pd.type === 'reset-all'){
+    state.shifts = []; state.goals = [];
+    showToast('All data reset');
+  }
+  state.pendingDelete = null;
+  renderApp();
+}
+function applyTheme(){
+  let resolved = state.theme;
+  if(state.theme === 'auto'){
+    resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', resolved);
+}
+function setTheme(v){ state.theme = v; applyTheme(); renderApp(); }
+
+/* ---------------------------------------------------------
+   EVENT DELEGATION
+--------------------------------------------------------- */
+document.body.addEventListener('click', function(e){
+  const el = e.target.closest('[data-action]');
+  if(!el) return;
+  const action = el.dataset.action;
+  const id = el.dataset.id;
+  if(action === 'nav'){
+    if(el.dataset.view === 'add') startNewShift(); else setView(el.dataset.view);
+  } else if(action === 'new-shift'){ startNewShift(); }
+  else if(action === 'edit-shift'){ startEditShift(id); }
+  else if(action === 'request-delete-shift'){ requestDelete('shift', id); }
+  else if(action === 'save-shift'){ saveShiftFromForm(); }
+  else if(action === 'cancel-form'){ setView(el.dataset.back || 'dashboard'); }
+  else if(action === 'toggle-theme'){ setTheme(el.dataset.value); }
+  else if(action === 'new-goal'){ state.showGoalForm = true; state.editingGoalId = null; renderApp(); }
+  else if(action === 'edit-goal'){ state.showGoalForm = true; state.editingGoalId = id; renderApp(); }
+  else if(action === 'save-goal'){ saveGoalFromForm(); }
+  else if(action === 'cancel-goal'){ state.showGoalForm = false; state.editingGoalId = null; renderApp(); }
+  else if(action === 'request-delete-goal'){ requestDelete('goal', id); }
+  else if(action === 'save-settings'){ saveSettingsFromForm(); }
+  else if(action === 'request-clear-demo'){ requestDelete('clear-demo', null); }
+  else if(action === 'request-reset-all'){ requestDelete('reset-all', null); }
+  else if(action === 'confirm-delete'){ confirmDelete(); }
+  else if(action === 'cancel-delete'){ state.pendingDelete = null; renderApp(); }
+});
+
+document.body.addEventListener('input', function(e){
+  const tid = e.target.id;
+  if(tid === 'shiftStartInput' || tid === 'shiftEndInput'){
+    const s = val('shiftStartInput'), en = val('shiftEndInput');
+    const hrsInput = document.getElementById('hoursWorkedInput');
+    if(s && en && hrsInput){
+      const h = computeDurationHours(s, en);
+      if(h !== null) hrsInput.value = h;
+    }
+  }
+  if(tid === 'periodStartDateInput' || tid === 'periodStartTimeInput' || tid === 'periodEndDateInput' || tid === 'periodEndTimeInput'){
+    updatePeriodPreview();
+  }
+});
+document.body.addEventListener('change', function(e){
+  const tid = e.target.id;
+  if(tid === 'historySortSelect'){ state.historySort = e.target.value; renderApp(); }
+  else if(tid === 'historyFilterSelect'){ state.historyFilterPeriod = e.target.value; renderApp(); }
+  else if(tid === 'settingsFrequencySelect'){
+    const row = document.getElementById('customLengthRow');
+    if(row) row.style.display = e.target.value === 'custom' ? '' : 'none';
+  }
+});
+
+/* ---------------------------------------------------------
+   DEMO DATA
+--------------------------------------------------------- */
+function loadDemoData(){
+  state.settings = {
+    frequency: 'biweekly', customLengthDays: 14, anchorDate: '2026-06-29',
+    periodStartTime: '00:00', periodEndTime: '23:59', defaultWage: 17.5,
+  };
+  const rows = [
+    ['2026-06-20','17:00','22:00',17,20,40,0],
+    ['2026-06-24','12:00','17:30',17,15,25,0],
+    ['2026-06-30','16:00','22:30',17.5,42,68,0],
+    ['2026-07-02','17:00','23:00',17.5,30,85,0],
+    ['2026-07-04','11:00','16:30',17.5,25,40,20],
+    ['2026-07-05','17:30','23:45',17.5,55,95,0],
+    ['2026-07-07','12:00','17:00',17.5,18,30,0],
+    ['2026-07-08','16:00','22:00',17.5,33,77,0],
+    ['2026-07-09','17:00','00:15',17.5,60,110,0],
+    ['2026-07-10','11:30','16:00',17.5,20,35,0],
+    ['2026-07-11','16:00','21:30',17.5,28,50,0],
+  ];
+  state.shifts = rows.map(function(row, idx){
+    const shiftDate = row[0], shiftStart = row[1], shiftEnd = row[2], wage = row[3], cash = row[4], card = row[5], other = row[6];
+    const dObj = new Date(shiftDate + 'T00:00:00');
+    const period = generateDefaultPeriod(dObj, state.settings);
+    const hours = computeDurationHours(shiftStart, shiftEnd);
+    return Object.assign({
+      id: uid(), shiftDate: shiftDate, shiftStart: shiftStart, shiftEnd: shiftEnd,
+      hoursWorked: hours, hourlyWage: wage, cashTips: cash, cardTips: card, otherPay: other, notes: '',
+      isDemo: true, createdAt: Date.now() - (rows.length - idx) * 100000,
+    }, period);
+  });
+  state.goals = [{
+    id: uid(), name: 'New Camera Kit', targetAmount: 1500, targetDate: '2026-09-30', startDate: '2026-07-01',
+    isDemo: true, createdAt: Date.now(),
+  }];
+}
+
+/* ---------------------------------------------------------
+   INIT
+--------------------------------------------------------- */
+function init(){
+  applyTheme();
+  loadDemoData();
+  renderApp();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(){
+    if(state.theme === 'auto'){ applyTheme(); renderApp(); }
+  });
+}
+init();
+</script>
+</body>
+</html>
