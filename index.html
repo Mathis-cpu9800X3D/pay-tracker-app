@@ -193,6 +193,7 @@
   .hint{ font-size:12px; color:var(--label-tertiary); margin-top:5px; }
   .form-row-2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .period-preview{ font-size:13px; color:var(--accent); font-weight:600; background:rgba(18,128,92,0.08); padding:11px 13px; border-radius:12px; margin:2px 0 4px; }
+  .period-preview::before { content: "🗓 "; }
 
   .select-wrap{ position:relative; }
   .select-wrap select{ appearance:none; -webkit-appearance:none; padding-right:34px; }
@@ -910,6 +911,7 @@ function renderAddView(){
     d = { shiftDate: todayISO(), shiftStart:'', shiftEnd:'', hoursWorked:'', hourlyWage: state.settings.defaultWage || '', cashTips:'', cardTips:'', otherPay:'', notes:'',
       periodStartDate: gen.periodStartDate, periodStartTime: gen.periodStartTime, periodEndDate: gen.periodEndDate, periodEndTime: gen.periodEndTime };
   }
+  const genPreview = generatePeriodForDate(new Date(d.shiftDate + 'T00:00:00'), state.settings); 
   return headerHTML(editing ? 'Edit Shift' : 'Add Shift') +
     '<div class="card form-card">' +
       '<div class="form-section-title">Shift details</div>' +
@@ -924,17 +926,8 @@ function renderAddView(){
       '<div class="field-error" id="err-hoursWorked"></div></div>' +
 
       '<div class="form-section-title">Pay period</div>' +
-      '<div class="form-row-2">' +
-        '<div class="form-field"><label>Period start date</label><input type="date" id="periodStartDateInput" value="' + (d.periodStartDate||'') + '">' +
-        '<div class="field-error" id="err-periodStartDate"></div></div>' +
-        '<div class="form-field"><label>Start time</label><input type="time" id="periodStartTimeInput" value="' + (d.periodStartTime||'00:00') + '"></div>' +
-      '</div>' +
-      '<div class="form-row-2">' +
-        '<div class="form-field"><label>Period end date</label><input type="date" id="periodEndDateInput" value="' + (d.periodEndDate||'') + '">' +
-        '<div class="field-error" id="err-periodEndDate"></div></div>' +
-        '<div class="form-field"><label>End time</label><input type="time" id="periodEndTimeInput" value="' + (d.periodEndTime||'23:59') + '"></div>' +
-      '</div>' +
-      '<div class="period-preview" id="periodPreviewText">Select dates to preview the pay period range.</div>' +
+  
+     '<dive class="period-preview">This shift will be filed under: ' + formatPeriodRange (genPreview.startDate, state.settings.periodStarteTime, genPreview.endDate, state.settings.periodEndTime) + '</div>' +
 
       '<div class="form-section-title">Pay &amp; tips</div>' +
       '<div class="form-field"><label>Hourly wage</label><input type="number" step="0.01" min="0" inputmode="decimal" id="hourlyWageInput" value="' + (d.hourlyWage||'') + '">' +
@@ -1018,13 +1011,6 @@ function validateShift(data){
   if(!data.shiftDate) errors.shiftDate = 'Shift date is required.';
   if(data.hoursWorked === '' || isNaN(data.hoursWorked) || parseFloat(data.hoursWorked) <= 0) errors.hoursWorked = 'Enter hours greater than 0.';
   if(data.hourlyWage === '' || isNaN(data.hourlyWage) || parseFloat(data.hourlyWage) < 0) errors.hourlyWage = 'Enter a valid hourly wage.';
-  if(!data.periodStartDate) errors.periodStartDate = 'Required.';
-  if(!data.periodEndDate) errors.periodEndDate = 'Required.';
-  if(data.periodStartDate && data.periodEndDate){
-    const start = combineDateTime(data.periodStartDate, data.periodStartTime || '00:00');
-    const end = combineDateTime(data.periodEndDate, data.periodEndTime || '23:59');
-    if(end <= start) errors.periodEndDate = 'Period end must be after period start.';
-  }
   return errors;
 }
 function clearFormErrors(){
@@ -1058,12 +1044,16 @@ function saveShiftFromForm(){
   const data = {
     shiftDate: val('shiftDateInput'), shiftStart: val('shiftStartInput'), shiftEnd: val('shiftEndInput'),
     hoursWorked: val('hoursWorkedInput'),
-    periodStartDate: val('periodStartDateInput'), periodStartTime: val('periodStartTimeInput') || '00:00',
-    periodEndDate: val('periodEndDateInput'), periodEndTime: val('periodEndTimeInput') || '23:59',
     hourlyWage: val('hourlyWageInput'),
     cashTips: val('cashTipsInput') || '0', cardTips: val('cardTipsInput') || '0', otherPay: val('otherPayInput') || '0',
     notes: val('notesInput'),
   };
+  const shiftDateObj = new Date(data.shiftDate + 'T00:00:00');
+  const gen = generatePeriodForDate(shiftDateObj, state.settings);
+  data.periodStartDate = gen.startDate;
+  data.periodStartTime = state.settings.periodStartTime || '00:00';
+  dataperiodEndDate = gen.endDate;
+  data.periodEndTime = state.settings.periodEndTime || '23:59';
   const errors = validateShift(data);
   if(Object.keys(errors).length > 0){ showFormErrors(errors); return; }
   if(state.editingShiftId){
@@ -1180,9 +1170,12 @@ document.body.addEventListener('input', function(e){
       if(h !== null) hrsInput.value = h;
     }
   }
-  if(tid === 'periodStartDateInput' || tid === 'periodStartTimeInput' || tid === 'periodEndDateInput' || tid === 'periodEndTimeInput'){
-    updatePeriodPreview();
-  }
+  if(tid === 'shiftDateInput'){
+  const previewEl = document.querySelector('.period-preview');
+  const sObj = new Date(val('shiftDateInput') + 'T00:00:00');
+  const g = generatePeriodForDate(sObj, state.settings);
+  if(previewEl) previewEl.textContent = 'This shift will be filed under: ' + formatPeriodRange(g.startDate, state.settings.periodStartTime, g.endDate, state.settings.periodEndTime);
+}
 });
 document.body.addEventListener('change', function(e){
   const tid = e.target.id;
