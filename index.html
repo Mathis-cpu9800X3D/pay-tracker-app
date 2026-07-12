@@ -990,7 +990,7 @@ function renderModal(){
   const titles = { shift:'Delete Shift', goal:'Delete Goal', 'clear-demo':'Clear Demo Data', 'reset-all':'Reset All Data' };
   const t = state.pendingDelete.type;
   root.classList.add('show');
-  root.innerHTML = '<div class="modal-overlay" data-action="cancel-delete"><div class="modal-sheet" onclick="event.stopPropagation()">' +
+  root.innerHTML = '<div class="modal-overlay" data-action="cancel-delete"><div class="modal-sheet">' +
     '<div class="modal-title">' + titles[t] + '</div><div class="modal-message">' + messages[t] + '</div>' +
     '<div class="modal-actions"><button class="btn-secondary" data-action="cancel-delete">Cancel</button>' +
     '<button class="btn-danger" data-action="confirm-delete">Delete</button></div></div></div>';
