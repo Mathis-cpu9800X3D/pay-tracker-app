@@ -7,9 +7,9 @@
 <title>Shift &amp; Tips — Pay Tracker</title>
 <style>
   :root{
-    --bg: #F2F2F7;
-    --bg-elevated: #FFFFFF;
-    --bg-secondary: #EFEFF2;
+    --bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    --bg-elevated: rgba(255, 255, 255, 0.45);
+    --bg-secondary: rgba(255, 255, 255, 0.2);
     --label-primary: #1C1C1E;
     --label-secondary: #6E6E73;
     --label-tertiary: #AEAEB2;
@@ -27,9 +27,9 @@
     --radius-sm: 12px;
   }
   [data-theme="dark"]{
-    --bg: #000000;
-    --bg-elevated: #1C1C1E;
-    --bg-secondary: #2C2C2E;
+   --bg: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+   --bg-elevated: rgba(28, 28, 30, 0.45);
+   --bg-secondary: rgba(255, 255, 255, 0.05);
     --label-primary: #FFFFFF;
     --label-secondary: #98989D;
     --label-tertiary: #6E6E73;
@@ -184,8 +184,13 @@
   .form-field label{ display:block; font-size:14px; font-weight:600; margin-bottom:6px; color:var(--label-primary); }
   .form-field .optional{ font-weight:400; color:var(--label-tertiary); font-size:12px; }
   .form-field input, .form-field select, .form-field textarea{
-    width:100%; background:var(--bg-secondary); border:1.5px solid transparent; border-radius:12px; padding:13px 14px; font-size:16px; color:var(--label-primary);
-  }
+      width:100%; background:var(--bg-secondary); border:1.5px solid transparent; border-radius:12px; padding:13px 14px; font-size:16px; color:var(--label-primary);
+      overflow:hidden;
+    }
+    .form-field input[type="date"], .form-field input[type="time"]{
+      -webkit-appearance:none;
+      appearance:none;
+    }
   .form-field textarea{ resize:none; min-height:84px; }
   .form-field input:focus, .form-field select:focus, .form-field textarea:focus{ outline:none; border-color:var(--accent); }
   .form-field input.input-error{ border-color:var(--danger); }
@@ -927,7 +932,7 @@ function renderAddView(){
 
       '<div class="form-section-title">Pay period</div>' +
   
-     '<dive class="period-preview">This shift will be filed under: ' + formatPeriodRange (genPreview.startDate, state.settings.periodStarteTime, genPreview.endDate, state.settings.periodEndTime) + '</div>' +
+     '<div class="period-preview">This shift will be filed under: ' + formatPeriodRange (genPreview.startDate, state.settings.periodStartTime, genPreview.endDate, state.settings.periodEndTime) + '</div>' +
 
       '<div class="form-section-title">Pay &amp; tips</div>' +
       '<div class="form-field"><label>Hourly wage</label><input type="number" step="0.01" min="0" inputmode="decimal" id="hourlyWageInput" value="' + (d.hourlyWage||'') + '">' +
@@ -1052,7 +1057,7 @@ function saveShiftFromForm(){
   const gen = generatePeriodForDate(shiftDateObj, state.settings);
   data.periodStartDate = gen.startDate;
   data.periodStartTime = state.settings.periodStartTime || '00:00';
-  dataperiodEndDate = gen.endDate;
+  data.periodEndDate = gen.endDate;
   data.periodEndTime = state.settings.periodEndTime || '23:59';
   const errors = validateShift(data);
   if(Object.keys(errors).length > 0){ showFormErrors(errors); return; }
